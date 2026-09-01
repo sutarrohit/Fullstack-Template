@@ -19,7 +19,9 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 FROM python:3.13-slim-bookworm AS runtime
 
-RUN useradd --create-home --uid 1000 app
+# The app user must own /app so the default sqlite file can be created there.
+RUN useradd --create-home --uid 1000 app \
+    && mkdir -p /app && chown app:app /app
 WORKDIR /app
 
 COPY --from=builder --chown=app:app /app /app

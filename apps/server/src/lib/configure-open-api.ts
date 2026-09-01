@@ -13,7 +13,7 @@ export function configureOpenAPI(app: AppOpenAPI) {
   });
 
   app.get(
-    '/swagger',
+    '/docs',
     swaggerUI({
       url: '/doc',
     })
