@@ -218,6 +218,8 @@ importers:
         specifier: ^8.50.0
         version: 8.50.0(eslint@9.39.1(jiti@2.7.0))(typescript@5.9.2)
 
+  packages/fastapi-server: {}
+
   packages/typescript-config: {}
 
 packages:
