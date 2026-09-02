@@ -22,10 +22,10 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends openssl ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
-# pnpm 9 via corepack (pinned by `packageManager` in package.json).
+# pnpm 10 via corepack (pinned by `packageManager` in package.json).
 ENV PNPM_HOME=/pnpm \
     PATH=/pnpm:$PATH
-RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+RUN corepack enable && corepack prepare pnpm@10.34.5 --activate
 
 WORKDIR /repo
 
@@ -44,6 +44,10 @@ COPY packages/typescript-config/package.json packages/typescript-config/
 COPY packages/fastapi-server/package.json packages/fastapi-server/
 
 # The trailing "..." also installs the workspace packages @repo/api depends on.
+#
+# pnpm 10 does not run dependency lifecycle scripts unless the package is listed
+# in `pnpm.onlyBuiltDependencies` at the workspace root -- @prisma/engines and
+# prisma are there, without which `db:generate` below has no query engine.
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile --filter @repo/api...
 
@@ -67,18 +71,21 @@ RUN export LOG_LEVEL=info \
     && pnpm --filter @repo/api db:generate \
     && pnpm --filter @repo/api build
 
-# Collect @repo/api plus the production dependencies it actually uses into one
-# self-contained directory whose top-level node_modules holds only this package's
-# deps -- nothing from apps/web or the root is linked into it.
+# Collect @repo/api plus only its production dependencies into one self-contained
+# directory with a real (non-symlinked) node_modules.
 #
-# CAVEAT: on pnpm 9 `deploy` still hardlinks the full virtual store into
-# /prod/api/node_modules/.pnpm, so ~1.1GB of unreachable packages (next, the two
-# @next/swc binaries, @prisma/studio-core, pglite) ride along and the runtime
-# image lands at ~1.75GB. Nothing imports them, so this is size, not correctness.
-# The usual workarounds do not apply here: `--legacy` is pnpm 10 only, and
-# `--config.node-linker=hoisted` deploys an empty node_modules. Fixing it means
-# moving to pnpm 10 (`--legacy`) or bundling the server to a single file.
-RUN pnpm --filter @repo/api --prod deploy /prod/api
+# What lands here is decided by apps/server/package.json, not by this file:
+# `--prod` drops devDependencies, and the `files` field limits the copied sources
+# to dist/ and prisma/. That is what keeps the AWS CDK stack (infra/, lambda/,
+# cdk.json) and aws-cdk-lib itself out of the image -- they are deploy-time
+# tooling, so the running container has no cloud-provider baggage and the same
+# image runs on any host.
+#
+# --legacy is required, not optional: from pnpm 10 a plain `deploy` refuses any
+# workspace without `inject-workspace-packages=true`
+# (ERR_PNPM_DEPLOY_NONINJECTED_WORKSPACE). It selects the resolver, not the
+# output size.
+RUN pnpm --filter @repo/api --prod deploy --legacy /prod/api
 
 
 # ---------------------------------------------------------------- runtime
