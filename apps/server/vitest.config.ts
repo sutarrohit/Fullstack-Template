@@ -1,5 +1,5 @@
 import { defineConfig } from "vitest/config";
-import path from "path";
+import path from "node:path";
 
 export default defineConfig({
   test: {
@@ -13,7 +13,7 @@ export default defineConfig({
   resolve: {
     // Match tsconfig's "@/*" -> repo-root mapping (e.g. "@/src/...", "@/prisma/...").
     alias: {
-      "@": path.resolve(__dirname, ".")
+      "@": path.resolve(import.meta.dirname, ".")
     }
   }
 });

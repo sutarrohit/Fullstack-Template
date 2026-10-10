@@ -15,17 +15,17 @@
 #   runtime    that tree only, running as a non-root user
 
 # ------------------------------------------------------------------- base
-FROM node:20-slim AS base
+FROM node:24-slim AS base
 
 # OpenSSL + CA certs are required by Prisma's query engine at runtime.
 RUN apt-get update \
   && apt-get install -y --no-install-recommends openssl ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
-# pnpm 10 via corepack (pinned by `packageManager` in package.json).
+# pnpm via corepack (pinned by `packageManager` in package.json).
 ENV PNPM_HOME=/pnpm \
     PATH=/pnpm:$PATH
-RUN corepack enable && corepack prepare pnpm@10.34.5 --activate
+RUN corepack enable && corepack prepare pnpm@12.10.1 --activate
 
 WORKDIR /repo
 
@@ -44,10 +44,6 @@ COPY packages/typescript-config/package.json packages/typescript-config/
 COPY packages/fastapi-server/package.json packages/fastapi-server/
 
 # The trailing "..." also installs the workspace packages @repo/api depends on.
-#
-# pnpm 10 does not run dependency lifecycle scripts unless the package is listed
-# in `pnpm.onlyBuiltDependencies` at the workspace root -- @prisma/engines and
-# prisma are there, without which `db:generate` below has no query engine.
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile --filter @repo/api...
 
