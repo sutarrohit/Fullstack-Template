@@ -6,12 +6,12 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "aiosqlite>=0.22.1",
-    "alembic>=1.20.0",
-    "fastapi[standard]>=0.143.0",
+    "alembic>=1.20.1",
+    "fastapi[standard]>=0.161.1",
     "pwdlib[argon2]>=0.3.1",
-    "pydantic-settings>=2.15.0",
+    "pydantic-settings>=2.16.1",
     "pyjwt>=2.15.1",
-    "sqlalchemy[asyncio]>=2.1.4",
+    "sqlalchemy[asyncio]>=2.1.6",
 ]
 
 [dependency-groups]
@@ -19,7 +19,7 @@ dev = [
     "httpx>=0.28.1",
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
-    "ruff>=0.17.0",
+    "ruff>=0.17.2",
 ]
 
 [tool.pytest.ini_options]
